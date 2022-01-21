@@ -10,9 +10,9 @@ function DynamicTable({ columns, data, loading, ...props }) {
     getTableProps,
     getTableBodyProps,
     headerGroups,
-    rows,
+    // rows,
+    page,
     prepareRow,
-    // page,
     canPreviousPage,
     canNextPage,
     pageOptions,
@@ -90,7 +90,7 @@ function DynamicTable({ columns, data, loading, ...props }) {
           ))}
         </Thead>
         <Tbody {...getTableBodyProps()}>
-          {rows.map((row) => {
+          {page.map((row) => {
             prepareRow(row)
             return (
               <Tr {...row.getRowProps()}>

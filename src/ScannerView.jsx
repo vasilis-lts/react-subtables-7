@@ -1,7 +1,8 @@
 import { Button } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import DateTimePicker from "react-datetime-picker";
 import DynamicTable from "./DynamicTable"
+import { Spinner } from '@chakra-ui/react'
 import { CSVLink } from "react-csv";
 
 export default function ScannerView() {
@@ -10,6 +11,9 @@ export default function ScannerView() {
   const [TableData, setTableData] = useState([]);
   const [FilteredTableData, setFilteredTableData] = useState(null);
   const [ExportData, setExportData] = useState([]);
+  const [ShowLoading, setShowLoading] = useState(false);
+  const [ShowErrorMsg, setShowErrorMsg] = useState(false);
+  const csvLink = useRef();
 
   const columns = React.useMemo(
     () => [
@@ -78,21 +82,24 @@ export default function ScannerView() {
 
   useEffect(() => {
     if (valueFrom && valueTo) {
+      console.log(valueFrom, valueTo)
       const timeStampFrom = valueFrom.getTime();
       const timeStampTo = valueTo.getTime();
       if (timeStampTo < timeStampFrom) {
-        alert('Vanaf datum moet vroeger zijn dan Tot datum')
+        setShowErrorMsg(true);
       } else {
+        setShowErrorMsg(false);
         filterData(timeStampFrom, timeStampTo);
       }
     } else {
-      setFilteredTableData(null);
+      setFilteredTableData([]);
     }
     // eslint-disable-next-line
   }, [valueFrom, valueTo]);
 
   async function getData() {
 
+    setShowLoading(true);
     let res;
     await fetch(`https://vfqbp0x9t2.execute-api.eu-central-1.amazonaws.com/rfid-demo-lambda`
       , {
@@ -109,6 +116,7 @@ export default function ScannerView() {
       .catch(err => { res = err; })
 
     setTableData(res);
+    setShowLoading(false);
   }
 
   function getBatchNumber(date) {
@@ -151,14 +159,21 @@ export default function ScannerView() {
       })
     });
 
-    console.log(exportData);
-
     setExportData(exportData)
   }
 
   return (
     <div id="ScannerView" style={{ maxWidth: 1200, paddingLeft: "50px", paddingTop: 50 }}>
-      <h1 style={{ fontSize: 30, padding: 5, fontWeight: 700 }}>Scanner Data</h1>
+      <div className="title" style={{ display: "flex", alignItems: "center" }}>
+
+        <h1 style={{ fontSize: 30, padding: 5, fontWeight: 700 }}>Scanner Data</h1>
+
+        {ShowLoading ?
+          <div className="loading-spinner">
+            <Spinner /> Please Wait...
+          </div>
+          : null}
+      </div>
 
       <div className="table-actions">
         <div className="actions-left">
@@ -174,15 +189,25 @@ export default function ScannerView() {
           />
         </div>
         <div className="actions-left">
-          <Button colorScheme={'blue'}>
-            <CSVLink
-              filename="RFID_Scans"
-              data={ExportData}
-            >Export CSV
-            </CSVLink>
-          </Button>
+          <Button onClick={() => {
+            csvLink.current.link.click();
+            setShowLoading(true);
+            setTimeout(() => {
+              setShowLoading(false);
+            }, 14000);
+          }} colorScheme={'blue'}>Export CSV</Button>
+          <CSVLink
+            filename="RFID_Scans"
+            data={ExportData}
+            ref={csvLink}
+            target='_blank'
+            className="hidden"
+          />
         </div>
       </div>
+      {ShowErrorMsg ?
+        <div className="error-message" style={{ color: 'red' }}>Vanaf datum moet vroeger zijn dan Tot datum</div>
+        : null}
 
       <div className="table-container" style={{ marginTop: 20 }}>
         <DynamicTable
@@ -194,6 +219,7 @@ export default function ScannerView() {
           globalFilter={true}
         />
       </div>
+      {!TableData.length && !ShowLoading ? <div>No data</div> : null}
 
     </div>
   )
