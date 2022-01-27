@@ -37,8 +37,7 @@ export default function ScannerView() {
       // },
       {
         Header: 'Laatste pos. prod. jaar',
-        id: 'lastYearDigit',
-        Cell: ({ row }) => row.original.ScanDateTime.split("-")[0].slice(-1)
+        accessor: 'ProductionYear',
       },
       {
         Header: 'Leverancier',
@@ -54,10 +53,10 @@ export default function ScannerView() {
       },
       {
         Header: 'Batch',
-        id: 'batchNumber',
-        Cell: ({ row }) => {
-          return getBatchNumber(row.original.ScanDateTime)
-        }
+        accessor: 'Batch',
+        // Cell: ({ row }) => {
+        //   return getBatchNumber(row.original.ScanDateTime)
+        // }
       },
       {
         Header: 'Palletnr.',
@@ -82,7 +81,6 @@ export default function ScannerView() {
 
   useEffect(() => {
     if (valueFrom && valueTo) {
-      console.log(valueFrom, valueTo)
       const timeStampFrom = valueFrom.getTime();
       const timeStampTo = valueTo.getTime();
       if (timeStampTo < timeStampFrom) {
@@ -92,7 +90,7 @@ export default function ScannerView() {
         filterData(timeStampFrom, timeStampTo);
       }
     } else {
-      setFilteredTableData([]);
+      setFilteredTableData(null);
     }
     // eslint-disable-next-line
   }, [valueFrom, valueTo]);
@@ -150,11 +148,11 @@ export default function ScannerView() {
       exportData.push({
         Datum: dateFormatted,
         Tijd: time,
-        Laatste_Pos_Prod_Year: date[0].slice(-1),
+        Laatste_Pos_Prod_Year: e.ProductionYear,
         Leverancier: e.SupplierCode,
         Fabriek: e.Factory,
         Oven: e.FurnaceLine,
-        Batch: getBatchNumber(e.ScanDateTime),
+        Batch: e.Batch,
         PalletNr: `${e.PalletNr}`,
       })
     });
@@ -191,10 +189,6 @@ export default function ScannerView() {
         <div className="actions-left">
           <Button onClick={() => {
             csvLink.current.link.click();
-            setShowLoading(true);
-            setTimeout(() => {
-              setShowLoading(false);
-            }, 14000);
           }} colorScheme={'blue'}>Export CSV</Button>
           <CSVLink
             filename="RFID_Scans"
