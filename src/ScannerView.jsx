@@ -31,6 +31,7 @@ export default function ScannerView() {
             {row.isExpanded ? <ChevronDownIcon w={8} h={8} color="green.500" /> : <ChevronRightIcon w={8} h={8} />}
           </span>
         ),
+        width: 50,
         // We can override the cell renderer with a SubCell to be used with an expanded row
         SubCell: () => null // No expander on an expanded row
       },
@@ -208,6 +209,7 @@ export default function ScannerView() {
         Oven: e.FurnaceLine,
         Batch: e.Batch,
         PalletNr: `${e.PalletNr}`,
+        // TotalScans: e.TotalScans
       })
     });
 

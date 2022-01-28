@@ -100,8 +100,9 @@ function DynamicTable({ columns, data, loading, ...props }) {
   // Render the UI for your table
   return (
 
-    <div id="dynamicTable" className={props.className ? props.className : ""}>
-      {/* {props.globalFilter ?
+    <Styles>
+      <div id="dynamicTable" className={props.className ? props.className : ""}>
+        {/* {props.globalFilter ?
         <div className="flex ai-center filter-container">
           <MdSearch size={20} color={"#2196f3"} />
           <input
@@ -118,14 +119,13 @@ function DynamicTable({ columns, data, loading, ...props }) {
             <MdRefresh size={20} color={"#4caf50"} /> Refresh</Button>
         </div>
         : null} */}
-      <Styles>
         <Table {...getTableProps()}>
           <Thead>
             {headerGroups.map((headerGroup) => (
               <Tr {...headerGroup.getHeaderGroupProps()}>
                 {headerGroup.headers.map((column) => (
                   <Th
-                    {...column.getHeaderProps(column.getSortByToggleProps())}
+                    {...column.getHeaderProps(column.getSortByToggleProps({ style: { width: column.width ? column.width : 150 } }))}
                     isNumeric={column.isNumeric}
                   >
                     {column.render('Header')}
@@ -162,56 +162,56 @@ function DynamicTable({ columns, data, loading, ...props }) {
             })}
           </Tbody>
         </Table>
-      </Styles>
 
-      <div className="pagination">
-        <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
-          {'<<'}
-        </button>{' '}
-        <button onClick={() => previousPage()} disabled={!canPreviousPage}>
-          {'<'}
-        </button>{' '}
-        <button onClick={() => nextPage()} disabled={!canNextPage}>
-          {'>'}
-        </button>{' '}
-        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
-          {'>>'}
-        </button>{' '}
-        <span>
-          Page{' '}
-          <strong>
-            {pageIndex + 1} of {pageOptions.length}
-          </strong>{' '}
-        </span>
-        <span>
-          | Go to page:{' '}
-          <input
-            type="number"
-            defaultValue={pageIndex + 1}
+        <div className="pagination">
+          <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
+            {'<<'}
+          </button>{' '}
+          <button onClick={() => previousPage()} disabled={!canPreviousPage}>
+            {'<'}
+          </button>{' '}
+          <button onClick={() => nextPage()} disabled={!canNextPage}>
+            {'>'}
+          </button>{' '}
+          <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
+            {'>>'}
+          </button>{' '}
+          <span>
+            Page{' '}
+            <strong>
+              {pageIndex + 1} of {pageOptions.length}
+            </strong>{' '}
+          </span>
+          <span>
+            | Go to page:{' '}
+            <input
+              type="number"
+              defaultValue={pageIndex + 1}
+              onChange={e => {
+                const page = e.target.value ? Number(e.target.value) - 1 : 0
+                console.log(page)
+                gotoPage(page)
+              }}
+              style={{ width: '100px' }}
+            />
+          </span>{' '}
+          <select
+            value={pageSize}
             onChange={e => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0
-              console.log(page)
-              gotoPage(page)
+              setPageSize(Number(e.target.value))
             }}
-            style={{ width: '100px' }}
-          />
-        </span>{' '}
-        <select
-          value={pageSize}
-          onChange={e => {
-            setPageSize(Number(e.target.value))
-          }}
-        >
-          {[10, 20, 30, 40, 50].map(pageSize => (
-            <option key={pageSize} value={pageSize}>
-              Show {pageSize}
-            </option>
-          ))}
-        </select>
+          >
+            {[10, 20, 30, 40, 50].map(pageSize => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </select>
+        </div>
+
       </div>
 
-    </div>
-
+    </Styles>
   )
 
 
@@ -232,7 +232,20 @@ function SubComponent(row, allData) {
     console.log(row);
     console.log(allData);
     const filtered = row.allData.filter(entry => entry.SessionId === row.row.original.SessionId)
-    setdata(filtered)
+
+    const groupedPerAntId = [];
+
+    filtered.forEach(entry => {
+      if (groupedPerAntId.find(eg => eg.AntennaId === entry.AntennaId)) {
+        const indexToUpdate = groupedPerAntId.findIndex(eg => eg.AntennaId === entry.AntennaId)
+        groupedPerAntId[indexToUpdate].Scans = groupedPerAntId[indexToUpdate].Scans + 1;
+      } else {
+        entry.Scans = 1;
+        groupedPerAntId.push(entry);
+      }
+    });
+
+    setdata(groupedPerAntId)
   }, []);
 
   const columns = React.useMemo(
@@ -260,6 +273,36 @@ function SubComponent(row, allData) {
         Header: 'Antenna Id',
         accessor: 'AntennaId',
       },
+
+
+      {
+        Header: 'Laatste pos. prod. jaar',
+        accessor: 'ProductionYear',
+      },
+      {
+        Header: 'Leverancier',
+        accessor: 'SupplierCode',
+      },
+      {
+        Header: 'Fabriek',
+        accessor: 'Factory',
+      },
+      {
+        Header: 'Oven',
+        accessor: 'FurnaceLine',
+      },
+      {
+        Header: 'Batch',
+        accessor: 'Batch',
+        // Cell: ({ row }) => {
+        //   return getBatchNumber(row.original.ScanDateTime)
+        // }
+      },
+      {
+        Header: 'Palletnr.',
+        accessor: 'PalletNr',
+      },
+
       {
         Header: 'Datum',
         id: 'date',
@@ -273,6 +316,10 @@ function SubComponent(row, allData) {
         Header: 'Tijd',
         id: 'time',
         Cell: ({ row }) => row.original.ScanDateTime.split("T")[1].split(".")[0]
+      },
+      {
+        Header: 'Number of Scans',
+        accessor: 'Scans',
       },
 
     ],
