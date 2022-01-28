@@ -347,7 +347,6 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
     getTableProps,
     getTableBodyProps,
     headerGroups,
-    rows,
     page,
 
     prepareRow,
@@ -362,7 +361,7 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
     // setGlobalFilter,
 
     // Get the state from the instance
-    state: { pageIndex, pageSize, globalFilter },
+    state: { pageIndex, pageSize },
 
   } = useTable({
     columns,
