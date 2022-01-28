@@ -51,10 +51,11 @@ export default function ScannerView() {
     th,
     td {
       margin: 0;
-      padding: 0.1rem;
+      padding: 0 0.1rem;
       border-bottom: 1px solid #777;
       border-right: 1px solid #777;
       text-align:center;
+      font-size:14px;
 
       /* The secret sauce */
       /* Each cell should grow equally */
@@ -99,10 +100,17 @@ export default function ScannerView() {
       {
         Header: 'Session Id',
         accessor: 'SessionId',
+        width: 330,
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.SessionId}</div>
+        }
       },
       {
         Header: 'Total Scans',
         accessor: 'TotalScans',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.TotalScans}</div>
+        }
       },
       {
         Header: 'Datum',
@@ -110,13 +118,17 @@ export default function ScannerView() {
         Cell: ({ row }) => {
           const date = row.original.ScanDateTime.split("T")[0];
           let dateSplit = date.split("-");
-          return dateSplit[2] + "/" + dateSplit[1] + "/" + dateSplit[0];
+          return <div className="table-cell">{dateSplit[2] + "/" + dateSplit[1] + "/" + dateSplit[0]}</div>
         }
       },
       {
         Header: 'Tijd',
         id: 'time',
-        Cell: ({ row }) => row.original.ScanDateTime.split("T")[1].split(".")[0]
+        Cell: ({ row }) => {
+          return <div className="table-cell">
+            {row.original.ScanDateTime.split("T")[1].split(".")[0]}
+          </div>
+        }
       },
       // {
       //   Header: 'Pallet Positie',
@@ -125,29 +137,44 @@ export default function ScannerView() {
       {
         Header: 'Laatste pos. prod. jaar',
         accessor: 'ProductionYear',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.ProductionYear}</div>
+        }
       },
       {
         Header: 'Leverancier',
         accessor: 'SupplierCode',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.SupplierCode}</div>
+        }
       },
       {
         Header: 'Fabriek',
         accessor: 'Factory',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.Factory}</div>
+        }
       },
       {
         Header: 'Oven',
         accessor: 'FurnaceLine',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.FurnaceLine}</div>
+        }
       },
       {
         Header: 'Batch',
         accessor: 'Batch',
-        // Cell: ({ row }) => {
-        //   return getBatchNumber(row.original.ScanDateTime)
-        // }
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.Batch}</div>
+        }
       },
       {
         Header: 'Palletnr.',
         accessor: 'PalletNr',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.PalletNr}</div>
+        }
       },
     ],
     [],
@@ -209,6 +236,7 @@ export default function ScannerView() {
   function groupBySessionId(res) {
     // setTableData(res);
     const parentTable = [];
+    const sessionIds = [];
 
     res.forEach(entry => {
       if (parentTable.find(pe => pe.SessionId === entry.SessionId)) {
@@ -222,14 +250,18 @@ export default function ScannerView() {
       } else {
         // just push :)
         entry.TotalScans = 1;
+        sessionIds.push(entry.SessionId);
         // entry.subRows = [entry];
         parentTable.push(entry);
       }
     });
 
-    console.log(parentTable);
+    // filter by last sessionId
+    const filteredLastSessionId = parentTable.filter(e => e.SessionId === sessionIds[sessionIds.length - 1])
+
+    console.log(sessionIds);
     prepExportData(res);
-    setTableData(parentTable);
+    setTableData(filteredLastSessionId);
     setAllData(res);
     setShowLoading(false);
   }
@@ -280,7 +312,7 @@ export default function ScannerView() {
   }
 
   return (
-    <div id="ScannerView" style={{ paddingLeft: "50px", paddingTop: 50 }}>
+    <div id="ScannerView" style={{ paddingLeft: "20px", paddingTop: 50 }}>
       <div className="title" style={{ display: "flex", alignItems: "center" }}>
 
         <h1 style={{ fontSize: 30, padding: 5, fontWeight: 700 }}>Scanner Data</h1>
@@ -293,7 +325,7 @@ export default function ScannerView() {
       </div>
 
       <div className="table-actions">
-        <div className="actions-left">
+        {/* <div className="actions-left">
           <label htmlFor="from">Van: </label>
           <DateTimePicker
             onChange={onChangeFrom}
@@ -304,7 +336,7 @@ export default function ScannerView() {
             onChange={onChangeTo}
             value={valueTo}
           />
-        </div>
+        </div> */}
         <div className="actions-left">
           <Button onClick={() => {
             csvLink.current.link.click();
@@ -340,7 +372,7 @@ export default function ScannerView() {
 }
 
 
-function Table({ columns, data, children, updateSubTableData, allData, hideExpander }) {
+function Table({ columns, data, children, updateSubTableData, allData, hideExpander, allRows }) {
   const [open, setOpen] = React.useState(false);
 
   const {
@@ -368,7 +400,7 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
     data,
     initialState: {
       pageIndex: 0,
-      pageSize: 10
+      pageSize: allRows ? 1000000 : 10
     }, // Pass our hoisted table state
   },
     useGlobalFilter,
@@ -382,39 +414,59 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
       {
         Header: 'Session Id',
         accessor: 'SessionId',
+        width: 330,
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.SessionId}</div>
+        }
       },
       {
         Header: 'Antenna Id',
         accessor: 'AntennaId',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.AntennaId}</div>
+        }
       },
-
-
       {
         Header: 'Laatste pos. prod. jaar',
         accessor: 'ProductionYear',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.ProductionYear}</div>
+        }
       },
       {
         Header: 'Leverancier',
         accessor: 'SupplierCode',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.SupplierCode}</div>
+        }
       },
       {
         Header: 'Fabriek',
         accessor: 'Factory',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.Factory}</div>
+        }
       },
       {
         Header: 'Oven',
         accessor: 'FurnaceLine',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.FurnaceLine}</div>
+        }
       },
       {
         Header: 'Batch',
         accessor: 'Batch',
-        // Cell: ({ row }) => {
-        //   return getBatchNumber(row.original.ScanDateTime)
-        // }
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.Batch}</div>
+        }
       },
       {
         Header: 'Palletnr.',
         accessor: 'PalletNr',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.PalletNr}</div>
+        }
       },
 
       {
@@ -423,17 +475,20 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
         Cell: ({ row }) => {
           const date = row.original.ScanDateTime.split("T")[0];
           let dateSplit = date.split("-");
-          return dateSplit[2] + "/" + dateSplit[1] + "/" + dateSplit[0];
+          return <div className="table-cell">{dateSplit[2] + "/" + dateSplit[1] + "/" + dateSplit[0]}</div>
         }
       },
       {
         Header: 'Tijd',
         id: 'time',
-        Cell: ({ row }) => row.original.ScanDateTime.split("T")[1].split(".")[0]
+        Cell: ({ row }) => <div className="table-cell">{row.original.ScanDateTime.split("T")[1].split(".")[0]}</div>
       },
       {
         Header: 'Number of Scans',
         accessor: 'Scans',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.Scans}</div>
+        }
       },
 
     ],
@@ -460,7 +515,9 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
               <tr {...headerGroup.getHeaderGroupProps()}>
                 {!hideExpander && <th></th>}
                 {headerGroup.headers.map((column) => (
-                  <th {...column.getHeaderProps()}>{column.render("Header")}</th>
+                  <th {...column.getHeaderProps({
+                    style: { minWidth: column.width ? column.width : 150 }
+                  })}>{column.render("Header")}</th>
                 ))}
               </tr>
             </React.Fragment>
@@ -479,9 +536,12 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
                       </span>
                     </td>
                   }
-                  {row.cells.map((cell) => {
+                  {row.cells.map((cell, index) => {
                     return (
+                      // <div key={index} style={{ height: 20, overflow: "hidden" }}>
+
                       <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
+                      // </div>
                     );
                   })}
                 </tr>
@@ -489,7 +549,7 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
                   <tr colSpan={7}>
                     <td colSpan={12}>
                       {/* {children} */}
-                      <div style={{ padding: 10 }}>
+                      <div className="table-children" style={{ padding: '0', margin: '10px 5px', border: '1px solid #ccc' }}>
                         <SubTable row={row} columns={columnsSub} allData={allData} />
                       </div>
                     </td>
@@ -576,5 +636,6 @@ function SubTable({ row, columns, allData }) {
     data={data}
     allData={allData}
     hideExpander={true}
+    allRows={true}
   />
 }

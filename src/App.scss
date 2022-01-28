@@ -36,9 +36,37 @@ html,body, #root{
 table th{
   background-color: #3182ce;
   color: #fff;
+  padding: 0.2rem 0!important;
 }
 
 table table th{
   background-color: #73a7d8;
 }
 
+.table-children .pagination {display: none;}
+
+.table-cell{
+  height: 20px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.table-children .table-cell{
+  height: 35px;
+  padding-top: 4px;
+}
+
+.table tbody td{
+  background-color: white;
+}
+
+.table-children thead {border-top: 2px solid #777;margin-top: -2px;}
+
+
+.table-children          { overflow: auto; height: 300px; }
+.table-children thead th { position: sticky; top: 0; z-index: 100000; }
+
+/* Just common table stuff. Really. */
+table  { border-collapse: collapse; width: 100%; }
+// th, td { padding: 8px 16px; }
+// th     { background:#eee; }
