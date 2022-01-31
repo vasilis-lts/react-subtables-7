@@ -1,6 +1,6 @@
 import { Button } from "@chakra-ui/react";
 import React, { useEffect, useRef, useState } from "react"
-import DateTimePicker from "react-datetime-picker";
+// import DateTimePicker from "react-datetime-picker";
 import { Spinner } from '@chakra-ui/react'
 import { CSVLink } from "react-csv";
 import { ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons'
@@ -8,8 +8,12 @@ import { useTable, usePagination, useSortBy, useGlobalFilter, useExpanded } from
 import styled from 'styled-components';
 
 export default function ScannerView() {
-  const [valueFrom, onChangeFrom] = useState(null);
-  const [valueTo, onChangeTo] = useState(null);
+  const [valueFrom,
+    // onChangeFrom
+  ] = useState(null);
+  const [valueTo,
+    //  onChangeTo
+  ] = useState(null);
   const [TableData, setTableData] = useState([]);
   const [FilteredTableData, setFilteredTableData] = useState(null);
   const [ExportData, setExportData] = useState([]);
@@ -105,13 +109,7 @@ export default function ScannerView() {
           return <div className="table-cell">{row.original.SessionId}</div>
         }
       },
-      {
-        Header: 'Total Scans',
-        accessor: 'TotalScans',
-        Cell: ({ row }) => {
-          return <div className="table-cell">{row.original.TotalScans}</div>
-        }
-      },
+
       {
         Header: 'Datum',
         id: 'date',
@@ -176,6 +174,13 @@ export default function ScannerView() {
           return <div className="table-cell">{row.original.PalletNr}</div>
         }
       },
+      {
+        Header: 'Total Scans',
+        accessor: 'TotalScans',
+        Cell: ({ row }) => {
+          return <div className="table-cell">{row.original.TotalScans}</div>
+        }
+      },
     ],
     [],
   )
@@ -229,8 +234,14 @@ export default function ScannerView() {
       .catch(err => { res = err; })
 
 
+    // sort date (newest first)
+    const sorted = res.sort(function (a, b) {
+      return new Date(b.ScanDateTime) - new Date(a.ScanDateTime);
+    });
+
+
     // group 1
-    groupBySessionId(res);
+    groupBySessionId(sorted);
   }
 
   function groupBySessionId(res) {
@@ -256,12 +267,8 @@ export default function ScannerView() {
       }
     });
 
-    // filter by last sessionId
-    const filteredLastSessionId = parentTable.filter(e => e.SessionId === sessionIds[sessionIds.length - 1])
-
-    console.log(sessionIds);
     prepExportData(res);
-    setTableData(filteredLastSessionId);
+    setTableData(parentTable);
     setAllData(res);
     setShowLoading(false);
   }
@@ -487,7 +494,7 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
         Header: 'Number of Scans',
         accessor: 'Scans',
         Cell: ({ row }) => {
-          return <div className="table-cell">{row.original.Scans}</div>
+          return <div className="table-cell">{row.original.NumberOfScans}</div>
         }
       },
 
@@ -614,22 +621,33 @@ function SubTable({ row, columns, allData }) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    const filtered = allData.filter(entry => entry.SessionId === row.original.SessionId);
-    const groupedPerAntId = [];
+    let subtableData = [];
+    let filtered = allData.filter(entry => entry.SessionId === row.original.SessionId);
+    // const groupedPerAntId = [];
 
-    filtered.forEach(entry => {
-      if (groupedPerAntId.find(eg => eg.AntennaId === entry.AntennaId)) {
-        const indexToUpdate = groupedPerAntId.findIndex(eg => eg.AntennaId === entry.AntennaId)
-        groupedPerAntId[indexToUpdate].Scans = groupedPerAntId[indexToUpdate].Scans + 1;
-      } else {
-        entry.Scans = 1;
-        groupedPerAntId.push(entry);
-      }
-    });
 
-    setData(groupedPerAntId);
+    // filtered.forEach(entry => {
+    //   if (groupedPerAntId.find(eg => eg.AntennaId === entry.AntennaId)) {
+    //     const indexToUpdate = groupedPerAntId.findIndex(eg => eg.AntennaId === entry.AntennaId)
+    //     groupedPerAntId[indexToUpdate].Scans = groupedPerAntId[indexToUpdate].Scans + 1;
+    //   } else {
+    //     entry.Scans = 1;
+    //     groupedPerAntId.push(entry);
+    //   }
+    // });
+
+    let sorted = filtered.sort(
+      function (a, b) {
+        if (a.PalletNr === b.PalletNr) {
+          return a.AntennaId - b.AntennaId;
+        }
+        return a.PalletNr > b.PalletNr ? 1 : -1;
+      });
+    console.log(sorted);
+    subtableData = [...sorted];
+    setData(subtableData);
     // eslint-disable-next-line
-  }, []);
+  }, [row, allData]);
 
   return data.length && <Table
     columns={columns}
