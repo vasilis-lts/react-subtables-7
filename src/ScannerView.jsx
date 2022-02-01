@@ -240,8 +240,19 @@ export default function ScannerView() {
     });
 
 
+    // get lastSessionIdOnly
+    const lastOnly = [];
+    for (let i = 0; i < sorted.length; i++) {
+      const entry = sorted[i];
+      if (!lastOnly.length) { lastOnly.push(entry) }
+
+      if (lastOnly.find(e => e.SessionId === entry.SessionId)) {
+        lastOnly.push(entry)
+      }
+    }
+
     // group 1
-    groupBySessionId(sorted);
+    groupBySessionId(lastOnly);
   }
 
   function groupBySessionId(res) {
@@ -250,9 +261,27 @@ export default function ScannerView() {
     const sessionIds = [];
 
     res.forEach(entry => {
-      if (parentTable.find(pe => pe.SessionId === entry.SessionId)) {
+      if (parentTable.find(pe =>
+        pe.SessionId === entry.SessionId &&
+        pe.PalletNr === entry.PalletNr &&
+        pe.Batch === entry.Batch &&
+        pe.CheckDigit === entry.CheckDigit &&
+        pe.Factory === entry.Factory &&
+        pe.FurnaceLine === entry.FurnaceLine &&
+        pe.ProductionYear === entry.ProductionYear &&
+        pe.SupplierCode === entry.SupplierCode
+      )) {
         // increase total scans and update latest DateTime
-        const indexToUpdate = parentTable.findIndex(pe => pe.SessionId === entry.SessionId)
+        const indexToUpdate = parentTable.findIndex(pe =>
+          pe.SessionId === entry.SessionId &&
+          pe.PalletNr === entry.PalletNr &&
+          pe.Batch === entry.Batch &&
+          pe.CheckDigit === entry.CheckDigit &&
+          pe.Factory === entry.Factory &&
+          pe.FurnaceLine === entry.FurnaceLine &&
+          pe.ProductionYear === entry.ProductionYear &&
+          pe.SupplierCode === entry.SupplierCode
+        )
         parentTable[indexToUpdate].TotalScans = parentTable[indexToUpdate].TotalScans + 1;
         parentTable[indexToUpdate].ScanDateTime = entry.ScanDateTime;
         // const subRows = [...parentTable[indexToUpdate].subRows];
@@ -267,8 +296,15 @@ export default function ScannerView() {
       }
     });
 
+    // sort by pallet number
+    let sorted = parentTable.sort(
+      function (a, b) {
+        return a.PalletNr - b.PalletNr;
+      }
+    )
+
     prepExportData(res);
-    setTableData(parentTable);
+    setTableData(sorted);
     setAllData(res);
     setShowLoading(false);
   }
@@ -305,6 +341,7 @@ export default function ScannerView() {
       exportData.push({
         Datum: dateFormatted,
         Tijd: time,
+        AntennaId: e.AntennaId,
         Laatste_Pos_Prod_Year: e.ProductionYear,
         Leverancier: e.SupplierCode,
         Fabriek: e.Factory,
@@ -319,7 +356,7 @@ export default function ScannerView() {
   }
 
   return (
-    <div id="ScannerView" style={{ paddingLeft: "20px", paddingTop: 50 }}>
+    <div id="ScannerView" style={{ paddingLeft: "20px", paddingTop: 50, maxWidth: 1100 }}>
       <div className="title" style={{ display: "flex", alignItems: "center" }}>
 
         <h1 style={{ fontSize: 30, padding: 5, fontWeight: 700 }}>Scanner Data</h1>
@@ -434,6 +471,20 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
         }
       },
       {
+        Header: 'Datum',
+        id: 'date',
+        Cell: ({ row }) => {
+          const date = row.original.ScanDateTime.split("T")[0];
+          let dateSplit = date.split("-");
+          return <div className="table-cell">{dateSplit[2] + "/" + dateSplit[1] + "/" + dateSplit[0]}</div>
+        }
+      },
+      {
+        Header: 'Tijd',
+        id: 'time',
+        Cell: ({ row }) => <div className="table-cell">{row.original.ScanDateTime.split("T")[1].split(".")[0]}</div>
+      },
+      {
         Header: 'Laatste pos. prod. jaar',
         accessor: 'ProductionYear',
         Cell: ({ row }) => {
@@ -476,25 +527,12 @@ function Table({ columns, data, children, updateSubTableData, allData, hideExpan
         }
       },
 
-      {
-        Header: 'Datum',
-        id: 'date',
-        Cell: ({ row }) => {
-          const date = row.original.ScanDateTime.split("T")[0];
-          let dateSplit = date.split("-");
-          return <div className="table-cell">{dateSplit[2] + "/" + dateSplit[1] + "/" + dateSplit[0]}</div>
-        }
-      },
-      {
-        Header: 'Tijd',
-        id: 'time',
-        Cell: ({ row }) => <div className="table-cell">{row.original.ScanDateTime.split("T")[1].split(".")[0]}</div>
-      },
+
       {
         Header: 'Number of Scans',
         accessor: 'Scans',
         Cell: ({ row }) => {
-          return <div className="table-cell">{row.original.NumberOfScans}</div>
+          return <div className="table-cell">{row.original.Scans}</div>
         }
       },
 
@@ -621,31 +659,48 @@ function SubTable({ row, columns, allData }) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    let subtableData = [];
-    let filtered = allData.filter(entry => entry.SessionId === row.original.SessionId);
-    // const groupedPerAntId = [];
+    let filtered = allData.filter(entry =>
+      entry.SessionId === row.original.SessionId &&
+      entry.PalletNr === row.original.PalletNr &&
+      entry.Batch === row.original.Batch &&
+      entry.CheckDigit === row.original.CheckDigit &&
+      entry.Factory === row.original.Factory &&
+      entry.FurnaceLine === row.original.FurnaceLine &&
+      entry.ProductionYear === row.original.ProductionYear &&
+      entry.SupplierCode === row.original.SupplierCode
+    );
 
+    console.log(filtered)
 
-    // filtered.forEach(entry => {
-    //   if (groupedPerAntId.find(eg => eg.AntennaId === entry.AntennaId)) {
-    //     const indexToUpdate = groupedPerAntId.findIndex(eg => eg.AntennaId === entry.AntennaId)
-    //     groupedPerAntId[indexToUpdate].Scans = groupedPerAntId[indexToUpdate].Scans + 1;
-    //   } else {
-    //     entry.Scans = 1;
-    //     groupedPerAntId.push(entry);
-    //   }
-    // });
+    // group by antennaId
+    const groupedPerAntId = [];
+    filtered.forEach(entry => {
+      if (groupedPerAntId.find(eg => eg.AntennaId === entry.AntennaId)) {
+        const indexToUpdate = groupedPerAntId.findIndex(eg => eg.AntennaId === entry.AntennaId)
+        groupedPerAntId[indexToUpdate].Scans = groupedPerAntId[indexToUpdate].Scans + 1;
+      } else {
+        entry.Scans = 1;
+        groupedPerAntId.push(entry);
+      }
+    });
 
-    let sorted = filtered.sort(
+    // double sort example
+    // let sorted = filtered.sort(
+    //   function (a, b) {
+    //     if (a.PalletNr === b.PalletNr) {
+    //       return a.AntennaId - b.AntennaId;
+    //     }
+    //     return a.PalletNr > b.PalletNr ? 1 : -1;
+    //   });
+    // console.log(sorted);
+
+    let sorted = groupedPerAntId.sort(
       function (a, b) {
-        if (a.PalletNr === b.PalletNr) {
-          return a.AntennaId - b.AntennaId;
-        }
-        return a.PalletNr > b.PalletNr ? 1 : -1;
-      });
-    console.log(sorted);
-    subtableData = [...sorted];
-    setData(subtableData);
+        return a.AntennaId - b.AntennaId;
+      }
+    )
+
+    setData(sorted);
     // eslint-disable-next-line
   }, [row, allData]);
 
